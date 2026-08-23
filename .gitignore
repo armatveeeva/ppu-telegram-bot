@@ -1,0 +1,16 @@
+.env
+*.log
+Реестр ППУ.xlsx
+materials.json
+sputnik.json
+words.json
+*.json
+!config/*.json.example
+temp_output/
+__pycache__/
+*.pyc
+venv/
+.vscode/
+.idea/
+*.docx
+!templates/.gitkeep
