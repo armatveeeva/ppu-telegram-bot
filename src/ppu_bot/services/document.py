@@ -27,15 +27,21 @@ async def generate_document(data: ProposalData, bot: Bot) -> tuple[Path, str | N
         filename = f"temp_{prefix}.jpg"
         return filename, photo_bytes
 
-    before_task = process_photo(data.photo_before_file_id, "до") if data.photo_before_file_id else None
-    after_task = process_photo(data.photo_after_file_id, "после") if data.photo_after_file_id else None
+    before_task = (
+        process_photo(data.photo_before_file_id, "до") if data.photo_before_file_id else None
+    )
+    after_task = (
+        process_photo(data.photo_after_file_id, "после") if data.photo_after_file_id else None
+    )
 
     results = await asyncio.gather(
         before_task if before_task else asyncio.sleep(0, result=None),
-        after_task if after_task else asyncio.sleep(0, result=None)
+        after_task if after_task else asyncio.sleep(0, result=None),
     )
 
-    doc = DocxTemplate(TEMPLATES_DIR / ("Бланк_ППУ.docx" if data.has_photos else "Бланк_ППУ_2.docx"))
+    doc = DocxTemplate(
+        TEMPLATES_DIR / ("Бланк_ППУ.docx" if data.has_photos else "Бланк_ППУ_2.docx")
+    )
 
     photo_before_name, photo_after_name = None, None
 

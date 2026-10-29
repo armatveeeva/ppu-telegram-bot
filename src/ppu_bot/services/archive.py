@@ -11,12 +11,18 @@ PHOTOS_DIR = Path("ППУ_фото")
 TEMP_DIR.mkdir(exist_ok=True)
 
 
-async def create_archive(proposal_id: int, doc_path: Path, photo_before_name: str | None, photo_after_name: str | None, password: str) -> Path:
+async def create_archive(
+    proposal_id: int,
+    doc_path: Path,
+    photo_before_name: str | None,
+    photo_after_name: str | None,
+    password: str,
+) -> Path:
     archive_path = TEMP_DIR / f"ППУ_{proposal_id}_архив.zip"
 
     def _zip():
-        with AESZipFile(archive_path, 'w', encryption=WZ_AES) as zf:
-            zf.setpassword(password.encode('utf-8'))
+        with AESZipFile(archive_path, "w", encryption=WZ_AES) as zf:
+            zf.setpassword(password.encode("utf-8"))
             zf.write(doc_path, doc_path.name)
             zf.write(EXCEL_FILE, EXCEL_FILE.name)
             if photo_before_name and (PHOTOS_DIR / photo_before_name).exists():
@@ -28,7 +34,9 @@ async def create_archive(proposal_id: int, doc_path: Path, photo_before_name: st
     return archive_path
 
 
-async def cleanup_files(doc_path: Path, archive_path: Path, photo_before_name: str | None, photo_after_name: str | None):
+async def cleanup_files(
+    doc_path: Path, archive_path: Path, photo_before_name: str | None, photo_after_name: str | None
+):
     def _remove():
         for f in [doc_path, archive_path]:
             if f and f.exists():

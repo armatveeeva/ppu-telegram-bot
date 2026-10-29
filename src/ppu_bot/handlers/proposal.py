@@ -60,7 +60,9 @@ async def process_reward(message: Message, state: FSMContext):
 @router.message(ProposalForm.problem)
 async def process_problem(message: Message, state: FSMContext):
     if len(message.text) > MAX_TEXT:
-        await message.answer(f"Слишком длинный текст ({len(message.text)} / {MAX_TEXT}). Попробуйте снова.")
+        await message.answer(
+            f"Слишком длинный текст ({len(message.text)} / {MAX_TEXT}). Попробуйте снова."
+        )
         return
     await state.update_data(problem=message.text)
     await state.set_state(ProposalForm.solution)
@@ -70,7 +72,9 @@ async def process_problem(message: Message, state: FSMContext):
 @router.message(ProposalForm.solution)
 async def process_solution(message: Message, state: FSMContext):
     if len(message.text) > MAX_TEXT:
-        await message.answer(f"Слишком длинный текст ({len(message.text)} / {MAX_TEXT}). Попробуйте снова.")
+        await message.answer(
+            f"Слишком длинный текст ({len(message.text)} / {MAX_TEXT}). Попробуйте снова."
+        )
         return
     await state.update_data(solution=message.text)
     await state.set_state(ProposalForm.result)
@@ -80,7 +84,9 @@ async def process_solution(message: Message, state: FSMContext):
 @router.message(ProposalForm.result)
 async def process_result(message: Message, state: FSMContext):
     if len(message.text) > MAX_TEXT:
-        await message.answer(f"Слишком длинный текст ({len(message.text)} / {MAX_TEXT}). Попробуйте снова.")
+        await message.answer(
+            f"Слишком длинный текст ({len(message.text)} / {MAX_TEXT}). Попробуйте снова."
+        )
         return
     await state.update_data(result=message.text)
     await state.set_state(ProposalForm.photo_before)
@@ -127,7 +133,9 @@ async def finalize_proposal(message: Message, state: FSMContext, bot: Bot):
         proposal = ProposalData(**data)
     except ValidationError as e:
         logger.error(f"Validation error: {e}")
-        await message.answer("Ошибка валидации данных. Пожалуйста, начните заполнение заново (/fill).")
+        await message.answer(
+            "Ошибка валидации данных. Пожалуйста, начните заполнение заново (/fill)."
+        )
         await state.clear()
         return
 
@@ -137,40 +145,46 @@ async def finalize_proposal(message: Message, state: FSMContext, bot: Bot):
     try:
         doc_path, photo_b_name, photo_a_name = await document.generate_document(proposal, bot)
 
-        proposal_id = await registry.add_proposal({
-            "submission_date": proposal.submission_date,
-            "department": proposal.department,
-            "fio": proposal.fio,
-            "position": proposal.position,
-            "process": proposal.process,
-            "problem": proposal.problem,
-            "solution": proposal.solution,
-            "result": proposal.result,
-            "reward": proposal.reward,
-            "photo_before_name": photo_b_name or "-",
-            "photo_after_name": photo_a_name or "-",
-        })
+        proposal_id = await registry.add_proposal(
+            {
+                "submission_date": proposal.submission_date,
+                "department": proposal.department,
+                "fio": proposal.fio,
+                "position": proposal.position,
+                "process": proposal.process,
+                "problem": proposal.problem,
+                "solution": proposal.solution,
+                "result": proposal.result,
+                "reward": proposal.reward,
+                "photo_before_name": photo_b_name or "-",
+                "photo_after_name": photo_a_name or "-",
+            }
+        )
 
         archive_path = await archive.create_archive(
             proposal_id,
             doc_path,
             photo_b_name,
             photo_a_name,
-            settings.archive_password.get_secret_value()
+            settings.archive_password.get_secret_value(),
         )
 
         file_to_send = FSInputFile(archive_path)
         await bot.send_document(
             chat_id=settings.admin_chat_id,
             document=file_to_send,
-            caption=f"Новая заявка ППУ №{proposal_id}"
+            caption=f"Новая заявка ППУ №{proposal_id}",
         )
 
-        await message.answer(f"Заявка ППУ №{proposal_id} успешно сохранена, зашифрована и отправлена администратору.")
+        await message.answer(
+            f"Заявка ППУ №{proposal_id} успешно сохранена, зашифрована и отправлена администратору."
+        )
 
     except Exception as e:
         logger.error(f"Ошибка при обработке ППУ: {e}", exc_info=True)
-        await message.answer("Произошла ошибка при сохранении заявки. Пожалуйста, сообщите администратору.")
+        await message.answer(
+            "Произошла ошибка при сохранении заявки. Пожалуйста, сообщите администратору."
+        )
 
     finally:
         await state.clear()
