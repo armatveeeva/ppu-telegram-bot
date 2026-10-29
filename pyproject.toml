@@ -34,12 +34,11 @@ packages = [{include = "ppu_bot", from = "src"}]
 line-length = 100
 target-version = "py311"
 src = ["src", "tests"]
-
-[tool.ruff]
-line-length = 100
-target-version = "py311"
-src = ["src", "tests"]
 extend-exclude = ["main.py", "src/bot.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "C4", "ASYNC", "S", "RUF"]
+ignore = ["S101", "E501", "RUF001", "RUF002", "RUF003"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S"]
