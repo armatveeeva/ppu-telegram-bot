@@ -20,8 +20,7 @@ async def main() -> None:
     except ValidationError as exc:
         fields = ", ".join(str(err["loc"][0]) for err in exc.errors())
         raise SystemExit(
-            f"Отсутствуют или некорректны переменные окружения: {fields}. "
-            "Проверьте файл .env"
+            f"Отсутствуют или некорректны переменные окружения: {fields}. Проверьте файл .env"
         ) from exc
 
     bot = Bot(token=settings.bot_token.get_secret_value())
