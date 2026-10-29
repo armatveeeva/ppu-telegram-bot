@@ -26,6 +26,9 @@ async def main() -> None:
     bot = Bot(token=settings.bot_token.get_secret_value())
     dp = Dispatcher()
 
+    from .handlers import proposal
+    dp.include_router(proposal.router)
+
     logger.info("Бот запущен, ожидаю сообщения")
     try:
         await dp.start_polling(bot)
