@@ -1,0 +1,44 @@
+[tool.poetry]
+name = "ppu-telegram-bot"
+version = "0.1.0"
+description = "PPU Telegram bot with encryption"
+authors = ["Anastasiia Matveeva <armatveeeva@gmail.com>"]
+readme = "README.md"
+packages = [{include = "ppu_bot", from = "src"}]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.15"
+aiogram = "^3.31.0"
+docxtpl = "^0.20.2"
+openpyxl = "^3.1.5"
+pyzipper = "^0.4.0"
+pydantic-settings = "^2.6.0"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.17.3"
+mypy = "^2.4.1"
+pytest = "^9.2.0"
+pytest-asyncio = "^1.4.1"
+pre-commit = "^4.7.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "C4", "ASYNC", "S", "RUF"]
+ignore = ["S101"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
