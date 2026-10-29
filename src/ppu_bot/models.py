@@ -1,4 +1,5 @@
 from datetime import datetime
+
 from pydantic import BaseModel, Field, field_validator
 
 MAX_TEXT = 3500
@@ -6,6 +7,7 @@ MAX_TEXT = 3500
 
 class ProposalData(BaseModel):
     """Данные формы ППУ, собранные в диалоге."""
+
     submission_date: str = Field(default_factory=lambda: datetime.now().strftime("%d.%m.%Y"))
     department: str = Field(min_length=2, max_length=100)
     process: str = Field(min_length=3, max_length=200)
@@ -20,8 +22,14 @@ class ProposalData(BaseModel):
     photo_after_file_id: str | None = None
 
     @field_validator(
-        "department", "process", "fio", "position", "reward",
-        "problem", "solution", "result",
+        "department",
+        "process",
+        "fio",
+        "position",
+        "reward",
+        "problem",
+        "solution",
+        "result",
     )
     @classmethod
     def strip_whitespace(cls, v: str) -> str:

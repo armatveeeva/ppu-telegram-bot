@@ -27,6 +27,7 @@ async def main() -> None:
     dp = Dispatcher()
 
     from .handlers import proposal
+
     dp.include_router(proposal.router)
 
     logger.info("Бот запущен, ожидаю сообщения")

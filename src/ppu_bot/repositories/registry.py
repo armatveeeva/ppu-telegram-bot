@@ -1,15 +1,25 @@
 import asyncio
 from pathlib import Path
+
 from openpyxl import Workbook, load_workbook
 
 EXCEL_FILE = Path("Реестр ППУ.xlsx")
 excel_lock = asyncio.Lock()
 
 EXPECTED_HEADERS = [
-    "№ ППУ", "Дата подачи", "Подразделение", "ФИО", "Должность",
-    "Краткое наименование улучшаемого процесса", "Описание проблемы",
-    "Предлагаемое изменение", "Результат", "Фото \"До\"", "Фото \"После\"",
-    "Распределение вознаграждения,%", "Статус"
+    "№ ППУ",
+    "Дата подачи",
+    "Подразделение",
+    "ФИО",
+    "Должность",
+    "Краткое наименование улучшаемого процесса",
+    "Описание проблемы",
+    "Предлагаемое изменение",
+    "Результат",
+    'Фото "До"',
+    'Фото "После"',
+    "Распределение вознаграждения,%",
+    "Статус",
 ]
 
 
@@ -36,10 +46,19 @@ async def add_proposal(data: dict) -> int:
             next_id = (last_id if isinstance(last_id, int) else 0) + 1
 
         row = [
-            next_id, data["submission_date"], data["department"], data["fio"],
-            data["position"], data["process"], data["problem"], data["solution"],
-            data["result"], data.get("photo_before_name", "-"),
-            data.get("photo_after_name", "-"), data["reward"], ""
+            next_id,
+            data["submission_date"],
+            data["department"],
+            data["fio"],
+            data["position"],
+            data["process"],
+            data["problem"],
+            data["solution"],
+            data["result"],
+            data.get("photo_before_name", "-"),
+            data.get("photo_after_name", "-"),
+            data["reward"],
+            "",
         ]
         ws.append(row)
         wb.save(EXCEL_FILE)

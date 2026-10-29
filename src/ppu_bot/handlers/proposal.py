@@ -1,14 +1,15 @@
 import logging
-from aiogram import Router, F, Bot
-from aiogram.types import Message
+
+from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
+from aiogram.types import FSInputFile, Message
 from pydantic import ValidationError
 
-from ..states import ProposalForm
-from ..models import ProposalData, MAX_TEXT
-from ..repositories import registry
-from ..services import document, archive
 from ..config import get_settings
+from ..models import MAX_TEXT, ProposalData
+from ..repositories import registry
+from ..services import archive, document
+from ..states import ProposalForm
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -137,21 +138,33 @@ async def finalize_proposal(message: Message, state: FSMContext, bot: Bot):
         doc_path, photo_b_name, photo_a_name = await document.generate_document(proposal, bot)
 
         proposal_id = await registry.add_proposal({
-            **proposal.model_dump(),
+            "submission_date": proposal.submission_date,
+            "department": proposal.department,
+            "fio": proposal.fio,
+            "position": proposal.position,
+            "process": proposal.process,
+            "problem": proposal.problem,
+            "solution": proposal.solution,
+            "result": proposal.result,
+            "reward": proposal.reward,
             "photo_before_name": photo_b_name or "-",
-            "photo_after_name": photo_a_name or "-"
+            "photo_after_name": photo_a_name or "-",
         })
 
         archive_path = await archive.create_archive(
-            proposal_id, doc_path, photo_b_name, photo_a_name, settings.archive_password.get_secret_value()
+            proposal_id,
+            doc_path,
+            photo_b_name,
+            photo_a_name,
+            settings.archive_password.get_secret_value()
         )
 
-        with open(archive_path, "rb") as f:
-            await bot.send_document(
-                chat_id=settings.admin_chat_id,
-                document=f,
-                caption=f"Новая заявка ППУ №{proposal_id}"
-            )
+        file_to_send = FSInputFile(archive_path)
+        await bot.send_document(
+            chat_id=settings.admin_chat_id,
+            document=file_to_send,
+            caption=f"Новая заявка ППУ №{proposal_id}"
+        )
 
         await message.answer(f"Заявка ППУ №{proposal_id} успешно сохранена, зашифрована и отправлена администратору.")
 

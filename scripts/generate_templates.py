@@ -1,6 +1,6 @@
-from docx import Document
-from docx.shared import Mm
 from pathlib import Path
+
+from docx import Document
 
 templates_dir = Path("templates")
 templates_dir.mkdir(exist_ok=True)

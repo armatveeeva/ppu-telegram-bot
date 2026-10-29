@@ -1,29 +1,30 @@
-import io
 import asyncio
+import io
 from pathlib import Path
-from docxtpl import DocxTemplate, InlineImage
-from docx.shared import Mm
+
 from aiogram import Bot
+from docx.shared import Mm
+from docxtpl import DocxTemplate, InlineImage
+
 from ..models import ProposalData
 
 TEMPLATES_DIR = Path("templates")
 DOCS_DIR = Path("ППУ_документы")
 PHOTOS_DIR = Path("ППУ_фото")
 
+DOCS_DIR.mkdir(exist_ok=True)
+PHOTOS_DIR.mkdir(exist_ok=True)
+
 
 async def generate_document(data: ProposalData, bot: Bot) -> tuple[Path, str | None, str | None]:
-    DOCS_DIR.mkdir(exist_ok=True)
-    PHOTOS_DIR.mkdir(exist_ok=True)
-
     context = data.model_dump()
 
-    async def process_photo(file_id: str | None, prefix: str) -> str | None:
+    async def process_photo(file_id: str | None, prefix: str) -> tuple[str, bytes] | None:
         if not file_id:
             return None
         file = await bot.get_file(file_id)
         photo_bytes = await bot.download_file(file.file_path)
-
-        filename = f"ППУ_{data.submission_date.replace('.', '')}_{prefix}.jpg"
+        filename = f"temp_{prefix}.jpg"
         return filename, photo_bytes
 
     before_task = process_photo(data.photo_before_file_id, "до") if data.photo_before_file_id else None
@@ -46,7 +47,7 @@ async def generate_document(data: ProposalData, bot: Bot) -> tuple[Path, str | N
         context["photo_before"] = ""
 
     if results[1]:
-        fname, pbytes = results[1]
+        _fname, pbytes = results[1]  # Префикс _ показывает, что переменная не используется
         photo_after_name = fname
         context["photo_after"] = InlineImage(doc, io.BytesIO(pbytes), width=Mm(80))
     else:
