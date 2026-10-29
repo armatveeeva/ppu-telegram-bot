@@ -13,3 +13,7 @@ data/
 temp_output/
 *.zip
 *.xlsx
+
+.DS_Store
+.coverage
+tmp/
