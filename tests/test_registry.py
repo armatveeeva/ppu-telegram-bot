@@ -43,9 +43,9 @@ def patch_excel_path(
 
 class TestAddProposal:
     async def test_creates_excel_if_not_exists(self, excel_path: Path) -> None:
-        assert not excel_path.exists()
+        assert not excel_path.exists()  # noqa: ASYNC240
         await add_proposal(SAMPLE_ROW)
-        assert excel_path.exists()
+        assert excel_path.exists()  # noqa: ASYNC240
 
     async def test_excel_has_correct_headers(self, excel_path: Path) -> None:
         await add_proposal(SAMPLE_ROW)
