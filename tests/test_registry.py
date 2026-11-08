@@ -1,19 +1,16 @@
 """Тесты репозитория registry — запись в Excel с моком файловой системы."""
 
 import asyncio
+from collections.abc import Generator
 from pathlib import Path
-from unittest.mock import patch
+from typing import Any
 
 import pytest
 from openpyxl import load_workbook
 
 from ppu_bot.repositories.registry import EXPECTED_HEADERS, add_proposal
 
-# ---------------------------------------------------------------------------
-# Вспомогательные данные
-# ---------------------------------------------------------------------------
-
-SAMPLE_ROW: dict = {
+SAMPLE_ROW: dict[str, Any] = {
     "submission_date": "01.01.2025",
     "department": "Отдел тестирования",
     "fio": "Тестов Тест Тестович",
@@ -28,29 +25,20 @@ SAMPLE_ROW: dict = {
 }
 
 
-# ---------------------------------------------------------------------------
-# Фикстуры
-# ---------------------------------------------------------------------------
-
-
 @pytest.fixture()
 def excel_path(tmp_path: Path) -> Path:
-    """Временный путь для Excel-файла, изолированный от рабочей директории."""
     return tmp_path / "Реестр ППУ.xlsx"
 
 
 @pytest.fixture(autouse=True)
-def patch_excel_path(excel_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Подменяем EXCEL_FILE в модуле на временный путь."""
+def patch_excel_path(
+    excel_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[None, None, None]:
     import ppu_bot.repositories.registry as reg_module
 
     monkeypatch.setattr(reg_module, "EXCEL_FILE", excel_path)
     monkeypatch.setattr(reg_module, "excel_lock", asyncio.Lock())
-
-
-# ---------------------------------------------------------------------------
-# Тесты
-# ---------------------------------------------------------------------------
+    yield
 
 
 class TestAddProposal:
@@ -67,13 +55,11 @@ class TestAddProposal:
         assert headers == EXPECTED_HEADERS
 
     async def test_first_proposal_gets_id_1(self, excel_path: Path) -> None:
-        proposal_id = await add_proposal(SAMPLE_ROW)
-        assert proposal_id == 1
+        assert await add_proposal(SAMPLE_ROW) == 1
 
     async def test_second_proposal_gets_id_2(self, excel_path: Path) -> None:
         await add_proposal(SAMPLE_ROW)
-        proposal_id = await add_proposal(SAMPLE_ROW)
-        assert proposal_id == 2
+        assert await add_proposal(SAMPLE_ROW) == 2
 
     async def test_ids_increment_sequentially(self, excel_path: Path) -> None:
         ids = [await add_proposal(SAMPLE_ROW) for _ in range(5)]
@@ -83,10 +69,9 @@ class TestAddProposal:
         await add_proposal(SAMPLE_ROW)
         wb = load_workbook(excel_path)
         ws = wb["proposals"]
-        row_values = [ws.cell(row=2, column=i + 1).value for i in range(len(EXPECTED_HEADERS))]
-        assert row_values[1] == SAMPLE_ROW["submission_date"]
-        assert row_values[2] == SAMPLE_ROW["department"]
-        assert row_values[3] == SAMPLE_ROW["fio"]
+        assert ws.cell(row=2, column=2).value == SAMPLE_ROW["submission_date"]
+        assert ws.cell(row=2, column=3).value == SAMPLE_ROW["department"]
+        assert ws.cell(row=2, column=4).value == SAMPLE_ROW["fio"]
 
     async def test_photo_names_written(self, excel_path: Path) -> None:
         await add_proposal(SAMPLE_ROW)
@@ -96,9 +81,12 @@ class TestAddProposal:
         assert ws.cell(row=2, column=11).value == "after.jpg"
 
     async def test_missing_photos_default_to_dash(self, excel_path: Path) -> None:
-        row_no_photos = {k: v for k, v in SAMPLE_ROW.items()
-                         if k not in ("photo_before_name", "photo_after_name")}
-        await add_proposal(row_no_photos)
+        row: dict[str, Any] = {
+            k: v
+            for k, v in SAMPLE_ROW.items()
+            if k not in ("photo_before_name", "photo_after_name")
+        }
+        await add_proposal(row)
         wb = load_workbook(excel_path)
         ws = wb["proposals"]
         assert ws.cell(row=2, column=10).value == "-"
@@ -111,7 +99,6 @@ class TestAddProposal:
         assert ws.cell(row=2, column=len(EXPECTED_HEADERS)).value == ""
 
     async def test_concurrent_writes_no_duplicate_ids(self, excel_path: Path) -> None:
-        """Параллельные запросы не должны давать одинаковые ID."""
         tasks = [add_proposal(SAMPLE_ROW) for _ in range(5)]
         ids = await asyncio.gather(*tasks)
         assert len(set(ids)) == 5

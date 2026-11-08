@@ -1,6 +1,7 @@
 import logging
 
 from aiogram import Bot, F, Router
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile, Message
 from pydantic import ValidationError
@@ -16,49 +17,68 @@ logger = logging.getLogger(__name__)
 
 
 @router.message(F.text == "Заполнить ППУ")
-@router.message(F.command == "fill")
-async def start_form(message: Message, state: FSMContext):
+@router.message(Command("fill"))
+async def start_form(message: Message, state: FSMContext) -> None:
     await state.set_state(ProposalForm.department)
     await message.answer("Укажите Ваше подразделение:")
 
 
 @router.message(ProposalForm.department)
-async def process_department(message: Message, state: FSMContext):
+async def process_department(message: Message, state: FSMContext) -> None:
+    # F.text гарантирует текст, но mypy не знает об этом — явная проверка
+    if message.text is None:
+        await message.answer("Пожалуйста, отправьте текстовое сообщение.")
+        return
     await state.update_data(department=message.text)
     await state.set_state(ProposalForm.process)
     await message.answer("Укажите улучшаемый процесс (операцию):")
 
 
 @router.message(ProposalForm.process)
-async def process_process(message: Message, state: FSMContext):
+async def process_process(message: Message, state: FSMContext) -> None:
+    if message.text is None:
+        await message.answer("Пожалуйста, отправьте текстовое сообщение.")
+        return
     await state.update_data(process=message.text)
     await state.set_state(ProposalForm.fio)
     await message.answer("Укажите Ваше ФИО:")
 
 
 @router.message(ProposalForm.fio)
-async def process_fio(message: Message, state: FSMContext):
+async def process_fio(message: Message, state: FSMContext) -> None:
+    if message.text is None:
+        await message.answer("Пожалуйста, отправьте текстовое сообщение.")
+        return
     await state.update_data(fio=message.text)
     await state.set_state(ProposalForm.position)
     await message.answer("Укажите Вашу должность:")
 
 
 @router.message(ProposalForm.position)
-async def process_position(message: Message, state: FSMContext):
+async def process_position(message: Message, state: FSMContext) -> None:
+    if message.text is None:
+        await message.answer("Пожалуйста, отправьте текстовое сообщение.")
+        return
     await state.update_data(position=message.text)
     await state.set_state(ProposalForm.reward)
     await message.answer("Укажите распределение вознаграждения, %:")
 
 
 @router.message(ProposalForm.reward)
-async def process_reward(message: Message, state: FSMContext):
+async def process_reward(message: Message, state: FSMContext) -> None:
+    if message.text is None:
+        await message.answer("Пожалуйста, отправьте текстовое сообщение.")
+        return
     await state.update_data(reward=message.text)
     await state.set_state(ProposalForm.problem)
     await message.answer(f"Опишите проблему (до {MAX_TEXT} символов):")
 
 
 @router.message(ProposalForm.problem)
-async def process_problem(message: Message, state: FSMContext):
+async def process_problem(message: Message, state: FSMContext) -> None:
+    if message.text is None:
+        await message.answer("Пожалуйста, отправьте текстовое сообщение.")
+        return
     if len(message.text) > MAX_TEXT:
         await message.answer(
             f"Слишком длинный текст ({len(message.text)} / {MAX_TEXT}). Попробуйте снова."
@@ -70,7 +90,10 @@ async def process_problem(message: Message, state: FSMContext):
 
 
 @router.message(ProposalForm.solution)
-async def process_solution(message: Message, state: FSMContext):
+async def process_solution(message: Message, state: FSMContext) -> None:
+    if message.text is None:
+        await message.answer("Пожалуйста, отправьте текстовое сообщение.")
+        return
     if len(message.text) > MAX_TEXT:
         await message.answer(
             f"Слишком длинный текст ({len(message.text)} / {MAX_TEXT}). Попробуйте снова."
@@ -82,7 +105,10 @@ async def process_solution(message: Message, state: FSMContext):
 
 
 @router.message(ProposalForm.result)
-async def process_result(message: Message, state: FSMContext):
+async def process_result(message: Message, state: FSMContext) -> None:
+    if message.text is None:
+        await message.answer("Пожалуйста, отправьте текстовое сообщение.")
+        return
     if len(message.text) > MAX_TEXT:
         await message.answer(
             f"Слишком длинный текст ({len(message.text)} / {MAX_TEXT}). Попробуйте снова."
@@ -94,7 +120,10 @@ async def process_result(message: Message, state: FSMContext):
 
 
 @router.message(ProposalForm.photo_before, F.text)
-async def process_photo_before_text(message: Message, state: FSMContext):
+async def process_photo_before_text(message: Message, state: FSMContext) -> None:
+    if message.text is None:
+        await message.answer("Пожалуйста, прикрепите фото или напишите «нет».")
+        return
     if message.text.strip().lower() == "нет":
         await state.update_data(photo_before_file_id=None)
         await state.set_state(ProposalForm.photo_after)
@@ -104,14 +133,20 @@ async def process_photo_before_text(message: Message, state: FSMContext):
 
 
 @router.message(ProposalForm.photo_before, F.photo)
-async def process_photo_before_photo(message: Message, state: FSMContext):
+async def process_photo_before_photo(message: Message, state: FSMContext) -> None:
+    if message.photo is None:
+        await message.answer("Не удалось получить фото. Попробуйте ещё раз.")
+        return
     await state.update_data(photo_before_file_id=message.photo[-1].file_id)
     await state.set_state(ProposalForm.photo_after)
     await message.answer("Прикрепите фото ПОСЛЕ (или напишите «нет»):")
 
 
 @router.message(ProposalForm.photo_after, F.text)
-async def process_photo_after_text(message: Message, state: FSMContext, bot: Bot):
+async def process_photo_after_text(message: Message, state: FSMContext, bot: Bot) -> None:
+    if message.text is None:
+        await message.answer("Пожалуйста, прикрепите фото или напишите «нет».")
+        return
     if message.text.strip().lower() == "нет":
         await state.update_data(photo_after_file_id=None)
         await finalize_proposal(message, state, bot)
@@ -120,12 +155,15 @@ async def process_photo_after_text(message: Message, state: FSMContext, bot: Bot
 
 
 @router.message(ProposalForm.photo_after, F.photo)
-async def process_photo_after_photo(message: Message, state: FSMContext, bot: Bot):
+async def process_photo_after_photo(message: Message, state: FSMContext, bot: Bot) -> None:
+    if message.photo is None:
+        await message.answer("Не удалось получить фото. Попробуйте ещё раз.")
+        return
     await state.update_data(photo_after_file_id=message.photo[-1].file_id)
     await finalize_proposal(message, state, bot)
 
 
-async def finalize_proposal(message: Message, state: FSMContext, bot: Bot):
+async def finalize_proposal(message: Message, state: FSMContext, bot: Bot) -> None:
     await message.answer("Обрабатываю вашу заявку...")
     data = await state.get_data()
 

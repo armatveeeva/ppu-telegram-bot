@@ -9,7 +9,7 @@
 ## Технологический стек
 
 - **Язык программирования**: Python 3.11
-- **Фреймворк Telegram Bot**: `aiogram` (v2.x)
+- **Фреймворк Telegram Bot**: `aiogram` (v3.x)
 - **Генерация документов**: `docxtpl`, `python-docx`
 - **Работа с Excel**: `openpyxl`
 - **Шифрование архивов**: `pyzipper` (AES-256)

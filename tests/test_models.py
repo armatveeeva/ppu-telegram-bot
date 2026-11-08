@@ -1,15 +1,13 @@
 """Тесты модели ProposalData — валидация полей."""
 
+from typing import Any
+
 import pytest
 from pydantic import ValidationError
 
 from ppu_bot.models import MAX_TEXT, ProposalData
 
-# ---------------------------------------------------------------------------
-# Вспомогательная фабрика: минимально валидные данные
-# ---------------------------------------------------------------------------
-
-VALID_DATA: dict = {
+VALID_DATA: dict[str, Any] = {
     "department": "Отдел логистики",
     "process": "Приёмка товара",
     "fio": "Иванов Иван Иванович",
@@ -21,13 +19,8 @@ VALID_DATA: dict = {
 }
 
 
-def make_proposal(**overrides) -> ProposalData:
+def make_proposal(**overrides: Any) -> ProposalData:
     return ProposalData(**{**VALID_DATA, **overrides})
-
-
-# ---------------------------------------------------------------------------
-# Корректное создание
-# ---------------------------------------------------------------------------
 
 
 class TestProposalDataValid:
@@ -48,35 +41,24 @@ class TestProposalDataValid:
         assert p.photo_after_file_id is None
 
     def test_has_photos_false_without_photos(self) -> None:
-        p = make_proposal()
-        assert p.has_photos is False
+        assert make_proposal().has_photos is False
 
     def test_has_photos_true_with_before(self) -> None:
-        p = make_proposal(photo_before_file_id="file123")
-        assert p.has_photos is True
+        assert make_proposal(photo_before_file_id="file123").has_photos is True
 
     def test_has_photos_true_with_after(self) -> None:
-        p = make_proposal(photo_after_file_id="file456")
-        assert p.has_photos is True
+        assert make_proposal(photo_after_file_id="file456").has_photos is True
 
     def test_has_photos_true_with_both(self) -> None:
-        p = make_proposal(photo_before_file_id="b", photo_after_file_id="a")
-        assert p.has_photos is True
-
-
-# ---------------------------------------------------------------------------
-# Автоматический strip пробелов
-# ---------------------------------------------------------------------------
+        assert make_proposal(photo_before_file_id="b", photo_after_file_id="a").has_photos is True
 
 
 class TestStripWhitespace:
     def test_department_stripped(self) -> None:
-        p = make_proposal(department="  Отдел  ")
-        assert p.department == "Отдел"
+        assert make_proposal(department="  Отдел  ").department == "Отдел"
 
     def test_fio_stripped(self) -> None:
-        p = make_proposal(fio="  Иванов Иван Иванович  ")
-        assert p.fio == "Иванов Иван Иванович"
+        assert make_proposal(fio="  Иванов Иван Иванович  ").fio == "Иванов Иван Иванович"
 
     def test_problem_stripped(self) -> None:
         p = make_proposal(problem="  " + "А" * 10 + "  ")
@@ -84,32 +66,27 @@ class TestStripWhitespace:
         assert not p.problem.endswith(" ")
 
 
-# ---------------------------------------------------------------------------
-# Граничные значения длин
-# ---------------------------------------------------------------------------
-
-
 class TestFieldLengths:
     def test_department_min_length_ok(self) -> None:
-        make_proposal(department="АБ")  # ровно 2 символа — должно пройти
+        make_proposal(department="АБ")
 
     def test_department_too_short_raises(self) -> None:
         with pytest.raises(ValidationError):
-            make_proposal(department="А")  # 1 символ
+            make_proposal(department="А")
 
     def test_fio_min_length_ok(self) -> None:
-        make_proposal(fio="А Б В Г")  # ровно 7 символов
+        make_proposal(fio="А Б В Г")
 
     def test_fio_too_short_raises(self) -> None:
         with pytest.raises(ValidationError):
-            make_proposal(fio="Ив")  # 2 символа, min=5
+            make_proposal(fio="Ив")
 
     def test_problem_exactly_min_length(self) -> None:
-        make_proposal(problem="А" * 10)  # ровно min_length=10
+        make_proposal(problem="А" * 10)
 
     def test_problem_below_min_length_raises(self) -> None:
         with pytest.raises(ValidationError):
-            make_proposal(problem="Коротко")  # 7 символов
+            make_proposal(problem="Коротко")
 
     def test_problem_exactly_max_length(self) -> None:
         make_proposal(problem="А" * MAX_TEXT)
@@ -127,17 +104,12 @@ class TestFieldLengths:
             make_proposal(result="В" * (MAX_TEXT + 1))
 
 
-# ---------------------------------------------------------------------------
-# Обязательные поля
-# ---------------------------------------------------------------------------
-
-
 class TestRequiredFields:
     @pytest.mark.parametrize(
         "field",
         ["department", "process", "fio", "position", "reward", "problem", "solution", "result"],
     )
     def test_missing_required_field_raises(self, field: str) -> None:
-        data = {k: v for k, v in VALID_DATA.items() if k != field}
+        data: dict[str, Any] = {k: v for k, v in VALID_DATA.items() if k != field}
         with pytest.raises(ValidationError):
             ProposalData(**data)

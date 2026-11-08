@@ -5,6 +5,7 @@ from aiogram import Bot, Dispatcher
 from pydantic import ValidationError
 
 from .config import get_settings
+from .handlers import proposal
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +26,6 @@ async def main() -> None:
 
     bot = Bot(token=settings.bot_token.get_secret_value())
     dp = Dispatcher()
-
-    from .handlers import proposal
 
     dp.include_router(proposal.router)
 

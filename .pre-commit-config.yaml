@@ -16,6 +16,8 @@ repos:
           - pydantic-settings>=2.0.0
           - aiogram>=3.31.0
           - types-openpyxl
+          - pytest>=8.0.0
+          - pytest-asyncio>=0.23.0
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0

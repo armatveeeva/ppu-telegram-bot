@@ -8,7 +8,12 @@ EXCEL_FILE = Path("Реестр ППУ.xlsx")
 DOCS_DIR = Path("ППУ_документы")
 PHOTOS_DIR = Path("ППУ_фото")
 
-TEMP_DIR.mkdir(exist_ok=True)
+
+def ensure_dirs() -> None:
+    """Создать рабочие директории. Вызывать при старте бота, не при импорте."""
+    TEMP_DIR.mkdir(exist_ok=True)
+    DOCS_DIR.mkdir(exist_ok=True)
+    PHOTOS_DIR.mkdir(exist_ok=True)
 
 
 async def create_archive(
@@ -20,7 +25,7 @@ async def create_archive(
 ) -> Path:
     archive_path = TEMP_DIR / f"ППУ_{proposal_id}_архив.zip"
 
-    def _zip():
+    def _zip() -> None:
         with AESZipFile(archive_path, "w", encryption=WZ_AES) as zf:
             zf.setpassword(password.encode("utf-8"))
             zf.write(doc_path, doc_path.name)
@@ -35,9 +40,12 @@ async def create_archive(
 
 
 async def cleanup_files(
-    doc_path: Path, archive_path: Path, photo_before_name: str | None, photo_after_name: str | None
-):
-    def _remove():
+    doc_path: Path | None,
+    archive_path: Path | None,
+    photo_before_name: str | None,
+    photo_after_name: str | None,
+) -> None:
+    def _remove() -> None:
         for f in [doc_path, archive_path]:
             if f and f.exists():
                 f.unlink(missing_ok=True)
