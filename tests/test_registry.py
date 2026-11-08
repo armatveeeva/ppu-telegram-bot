@@ -96,7 +96,7 @@ class TestAddProposal:
         await add_proposal(SAMPLE_ROW)
         wb = load_workbook(excel_path)
         ws = wb["proposals"]
-        assert ws.cell(row=2, column=len(EXPECTED_HEADERS)).value == ""
+        assert ws.cell(row=2, column=len(EXPECTED_HEADERS)).value is None
 
     async def test_concurrent_writes_no_duplicate_ids(self, excel_path: Path) -> None:
         tasks = [add_proposal(SAMPLE_ROW) for _ in range(5)]
