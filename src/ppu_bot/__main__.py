@@ -6,6 +6,7 @@ from pydantic import ValidationError
 
 from .config import get_settings
 from .handlers import proposal
+from .services.archive import ensure_dirs
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ async def main() -> None:
             f"Отсутствуют или некорректны переменные окружения: {fields}. Проверьте файл .env"
         ) from exc
 
+    ensure_dirs()
     bot = Bot(token=settings.bot_token.get_secret_value())
     dp = Dispatcher()
 
